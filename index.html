@@ -52,6 +52,9 @@
       }
     }
     </script>
+    
+    <!-- এখানে আপনার বিজ্ঞাপন নেটওয়ার্কের প্রধান স্ক্রিপ্ট যুক্ত করুন (যদি আগে থেকে না করা থাকে) -->
+    <!-- <script type="text/javascript" src="বিজ্ঞাপনের-স্ক্রিপ্ট-লিঙ্ক.js"></script> -->
 
     <style>
         html{scroll-behavior:smooth}body{margin:0;padding:20px;font-family:Arial,sans-serif;background-color:#111;color:#fff;overflow-x:hidden}body.loading{overflow:hidden}body.loading>*:not(#loader){display:none}header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background-color:#1a1a1a;box-shadow:0 2px 10px rgba(0,0,0,.5);border-bottom:2px solid orange}
@@ -81,6 +84,52 @@
             width: 100%;
             height: 100%;
             border: none;
+        }
+
+        /* --- বিজ্ঞাপন ওভারলে এর জন্য স্টাইল --- */
+        #ad-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100001; /* Ensure it's on top of everything */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #ad-overlay .ad-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+
+        #ad-skip-timer {
+            color: white;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #skip-ad-btn {
+            background-color: orange;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #skip-ad-btn:hover {
+            background-color: darkorange;
         }
     </style>
 </head>
@@ -129,6 +178,14 @@
     <div class="movie-grid" id="movie-grid"></div>
     <div id="privacy-policy-section" class="privacy-policy"></div>
     <div class="footer-links"><a href="#" onclick="showPrivacyPolicy()">Privacy Policy</a> | <a href="#">Terms of Service</a><p style="margin-top: 10px;">© 2025 Movie TV. All Rights Reserved.</p></div>
+
+    <!-- বিজ্ঞাপন দেখানোর জন্য ওভারলে -->
+    <div id="ad-overlay" style="display:none;">
+        <div class="ad-container">
+            <div id="ad-skip-timer"></div>
+            <button id="skip-ad-btn" style="display:none;">Skip Ad &gt;&gt;</button>
+        </div>
+    </div>
 
 <script>
     const firebaseConfig = {
@@ -233,13 +290,72 @@
         activeModal = null;
     }
 
+    // --- এই ফাংশনটি নতুন করে পরিবর্তন করা হয়েছে ---
+    let adTimerInterval = null; // Countdown টাইমার নিয়ন্ত্রণ করার জন্য
+
     function openViewer(slug) {
         const movieData = allMovieData[slug];
         if (!movieData) return;
-        displayViewerContent(movieData);
-        openModal('viewerModal', { slug: slug }, `#movie/${slug}`);
-        updateMetaTags(movieData.title, movieData.description, movieData.image, window.location.href);
-        database.ref("movies/" + movieData.key + "/viewCount").transaction(count => (count || 0) + 1);
+
+        // বিজ্ঞাপন ওভারলে এর জন্য সমস্ত এলিমেন্ট নিন
+        const adOverlay = document.getElementById('ad-overlay');
+        const skipButton = document.getElementById('skip-ad-btn');
+        const timerDisplay = document.getElementById('ad-skip-timer');
+        let countdown = 5;
+        let adSkippedOrFinished = false;
+
+        // এই ফাংশনটি বিজ্ঞাপন লুকিয়ে মুভি প্লেয়ার দেখাবে
+        const proceedToMovie = () => {
+            if (adSkippedOrFinished) return; // ফাংশনটি যাতে দুবার না চলে
+            adSkippedOrFinished = true;
+
+            clearInterval(adTimerInterval); // কাউন্টডাউন বন্ধ করুন
+            adOverlay.style.display = 'none'; // বিজ্ঞাপন ওভারলে লুকান
+
+            // --- এটি পুরনো openViewer ফাংশনের মূল কোড ---
+            displayViewerContent(movieData);
+            openModal('viewerModal', { slug: slug }, `#movie/${slug}`);
+            updateMetaTags(movieData.title, movieData.description, movieData.image, window.location.href);
+            database.ref("movies/" + movieData.key + "/viewCount").transaction(count => (count || 0) + 1);
+        };
+
+        // --- বিজ্ঞাপন দেখানোর যুক্তি ---
+        adOverlay.style.display = 'flex';
+        skipButton.style.display = 'none';
+        timerDisplay.style.display = 'block';
+        timerDisplay.textContent = `You can skip the ad in ${countdown} seconds.`;
+
+        // ৫-সেকেন্ডের কাউন্টডাউন টাইমার শুরু করুন
+        adTimerInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                timerDisplay.textContent = `You can skip the ad in ${countdown} seconds.`;
+            } else {
+                clearInterval(adTimerInterval);
+                timerDisplay.style.display = 'none';
+                skipButton.style.display = 'block';
+            }
+        }, 1000);
+
+        // ব্যবহারকারী স্কিপ বাটনে ক্লিক করলে মুভিতে চলে যাবে
+        skipButton.onclick = proceedToMovie;
+
+        // আপনার দেওয়া Rewarded Interstitial বিজ্ঞাপন ফাংশনটি কল করুন
+        // নিশ্চিত করুন যে আপনার পেজে বিজ্ঞাপনের স্ক্রিপ্টটি লোড করা আছে
+        if (typeof show_9704414 === 'function') {
+             show_9704414().then(() => {
+                // এই অংশটি ব্যবহারকারী সফলভাবে বিজ্ঞাপন দেখার পরে চলবে
+                alert('You have seen an ad!'); // আপনার আসল alert
+                proceedToMovie();
+            }).catch(error => {
+                // যদি কোনো কারণে বিজ্ঞাপন লোড হতে ব্যর্থ হয়, তাহলে মুভিতে চলে যাবে
+                console.error("Ad failed to load:", error);
+                proceedToMovie();
+            });
+        } else {
+            console.error("Ad function show_9704414 is not defined. Make sure the ad script is loaded.");
+            proceedToMovie(); // বিজ্ঞাপন ফাংশন না থাকলে সরাসরি মুভি দেখাবে
+        }
     }
     
     function showSavedPosts() {
@@ -290,7 +406,6 @@
         });
     }
 
-    // --- displayViewerContent ফাংশনটি চূড়ান্তভাবে পরিবর্তন করা হয়েছে ---
     function displayViewerContent(movieData) {
         const { title, link, link2, link3, intermediateLink, category, description, director, cast, releaseDate } = movieData;
         const viewerContent = document.getElementById('viewerContent');
@@ -347,7 +462,6 @@
             }
         }
 
-        // --- নতুন টাইমার এখানে যুক্ত করা হয়েছে ---
         if (redirectTimer) {
             clearTimeout(redirectTimer);
         }
@@ -441,4 +555,4 @@
     function showPrivacyPolicy(){ alert("Privacy Policy is under development."); }
 </script>
 </body>
-    </html>
+        </html>

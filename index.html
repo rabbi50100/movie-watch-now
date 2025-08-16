@@ -115,19 +115,26 @@
             display: flex;
             padding: 20px; overflow-y: auto;
             position: relative;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0;
         }
         .modal-close {
             position: absolute; top: 15px; right: 20px; font-size: 2rem;
             color: #aaa; cursor: pointer; line-height: 1; z-index: 10;
         }
         
-        /* --- New styles for Modal --- */
-        .modal-content {
-            flex-direction: column;
+        #modal-top-banner-container {
+            width: 100%;
+            max-width: 320px;
+            min-height: 50px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
             align-items: center;
-            text-align: center;
-            gap: 0; /* Remove default gap */
         }
+
         .modal-poster img {
             max-width: 280px;
             width: 100%;
@@ -135,7 +142,7 @@
             margin-bottom: 15px;
         }
         .modal-title-custom {
-            color: #f5c518; /* Yellow color like screenshot */
+            color: #f5c518;
             font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 20px;
@@ -166,7 +173,6 @@
         .modal-link-btn.watch-360p { background-color: #2b9348; }
         .modal-link-btn.watch-720p { background-color: #0077b6; }
 
-        /* --- Info Table styling --- */
         .info-table {
             width: 90%;
             max-width: 400px;
@@ -188,18 +194,16 @@
             flex-shrink: 0;
         }
         
-        /* --- Banner Ad Container Styling --- */
         #modal-ad-banner-container {
             width: 90%;
             max-width: 400px;
-            margin-bottom: 20px; /* বিজ্ঞাপন এবং ডেসক্রিপশনের মধ্যে ফাঁকা জায়গা */
-            min-height: 50px;    /* বিজ্ঞাপনের কোড লোড হওয়ার আগে যেনো লেআউট নষ্ট না হয় */
+            margin-bottom: 20px;
+            min-height: 250px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* --- Description Section --- */
         .description-section {
             width: 90%;
             max-width: 400px;
@@ -211,12 +215,15 @@
             font-weight: bold;
             margin-bottom: 10px;
         }
+        
+        /* --- [UPDATED] Description Style --- */
         #modal-description {
             line-height: 1.6;
             color: #ccc;
+            font-size: 0.95rem; /* ফন্ট সাইজ কিছুটা ছোট করা হলো */
+            text-align: justify; /* লেখাগুলোকে আরও সুন্দর ও গোছানো দেখানোর জন্য */
         }
 
-        /* Mobile responsive adjustments */
         @media (max-width: 600px) {
             header { flex-direction: column; }
             .modal-poster img { max-width: 220px; }
@@ -241,10 +248,22 @@
         <div id="movie-grid"></div>
     </main>
 
-    <!-- UPDATED Movie Detail Modal -->
     <div id="movie-modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal()">&times;</span>
+            
+            <div id="modal-top-banner-container">
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '4fd4f9b283da8f12b3162d7d1cb23317',
+                        'format' : 'iframe',
+                        'height' : 50,
+                        'width' : 320,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/4fd4f9b283da8f12b3162d7d1cb23317/invoke.js"></script>
+            </div>
 
             <div class="modal-poster">
                 <img id="modal-img" src="" alt="Movie Poster">
@@ -272,25 +291,19 @@
                     <span id="modal-release-date"></span>
                 </div>
             </div>
-
-            <!-- ################################################## -->
-            <!-- ########## BANNER AD HAS BEEN PLACED HERE ######## -->
-            <!-- ################################################## -->
+            
             <div id="modal-ad-banner-container">
-				<script type="text/javascript">
-	atOptions = {
-		'key' : 'd69dc2bcc5ccb72f049358e29d0c811f',
-		'format' : 'iframe',
-		'height' : 300,
-		'width' : 160,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/d69dc2bcc5ccb72f049358e29d0c811f/invoke.js"></script>
-
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : 'ca89ce47317b6a13d35e3c7e04813e6a',
+                        'format' : 'iframe',
+                        'height' : 250,
+                        'width' : 300,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/ca89ce47317b6a13d35e3c7e04813e6a/invoke.js"></script>
             </div>
-            <!-- ################# END BANNER AD ################## -->
-
 
             <div class="description-section">
                 <h3 class="description-title">DESCRIPTION</h3>
@@ -320,9 +333,8 @@
         const searchInput = document.getElementById('search-input');
         const modal = document.getElementById('movie-modal');
 
-        let allMovies = []; // To store all movies locally
+        let allMovies = [];
 
-        // --- Main Functions on Page Load ---
         document.addEventListener('DOMContentLoaded', () => {
             logVisit();
             loadSiteSettings();
@@ -425,7 +437,9 @@
             document.getElementById('modal-title').textContent = movie.title + releaseYear;
             document.getElementById('modal-img').src = movie.image;
             document.getElementById('modal-category').textContent = movie.category || 'N/A';
-            document.getElementById('modal-description').textContent = movie.description || 'No description available.';
+            
+            document.getElementById('modal-description').innerHTML = movie.description || 'No description available.';
+            
             document.getElementById('modal-director').textContent = movie.director || 'N/A';
             document.getElementById('modal-cast').textContent = movie.cast || 'N/A';
             document.getElementById('modal-release-date').textContent = movie.releaseDate || 'N/A';
@@ -456,4 +470,4 @@
         });
     </script>
 </body>
-    </html>
+				</html>
